@@ -397,4 +397,44 @@ class OperationDefinitionTemplateTests: XCTestCase {
     // then
     expect(actual).to(equalLineByLine(expected, ignoringExtraLines: true))
   }
+
+  func test__generate__givenQueryWithNullableScalarVariable_generatesQueryOperationWithKeywordVariable() throws {
+    // given
+    schemaSDL = """
+    type Query {
+      allAnimals(where: Animal): [Animal!]
+    }
+
+    type Animal {
+      species: String!
+    }
+    """
+
+    document = """
+    query TestOperation($where: String = "TestVar") {
+      allAnimals(where: $where) {
+        species
+      }
+    }
+    """
+
+    let expected =
+    """
+      public var `where`: GraphQLNullable<String>
+
+      public init(where: GraphQLNullable<String> = "TestVar") {
+        self.where = `where`
+      }
+
+      public var variables: Variables? { ["where": `where`] }
+    """
+
+    // when
+    try buildSubjectAndOperation()
+
+    let actual = renderSubject()
+
+    // then
+    expect(actual).to(equalLineByLine(expected, atLine: 15, ignoringExtraLines: true))
+  }
 }
